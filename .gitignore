@@ -1,0 +1,32 @@
+# Version 1.0.2
+# =======================================================
+# Ignore Editor-files, vendor and other basic stuff
+# =======================================================
+.DS_Store
+node_modules
+bower_components
+*.lock
+
+/.build
+/.buildpath
+/.bowerrc
+/.bundle
+/.env
+/.idea
+/.settings
+/.project
+/.php-version
+/vendor
+
+/web/export/*
+!/web/export/.gitkeep
+/web/.htaccess
+/web/.htpasswd
+/web/gitpull.php
+/web/data*.txt
+
+/config/settings.php
+/dev/*.sql
+/dev/*.gz
+/dev/fixer.php
+

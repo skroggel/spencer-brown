@@ -1,0 +1,33 @@
+{
+    "name": "madj2k/trading-analyser",
+    "description": "Analyser for stock trading",
+    "license": "GPL-2.0+",
+    "require": {
+        "php": "~7.2",
+        "ext-curl": "*",
+        "ext-pdo": "*",
+        "ext-json": "*",
+        "league/csv": "*"
+    },
+    "require-dev": {
+
+    },
+    "scripts": {
+
+    },
+    "extra": {
+
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "platform": {
+            "php": "7.2"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Madj2k\\TradingAnalyser\\": "src"
+        }
+    }
+}
