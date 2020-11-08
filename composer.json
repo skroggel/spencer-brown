@@ -1,13 +1,10 @@
 {
-    "name": "madj2k/trading-analyser",
-    "description": "Analyser for stock trading",
+    "name": "madj2k/spencer-brown",
+    "description": "Minimalistic framework for plain PHP-projects",
     "license": "GPL-2.0+",
     "require": {
         "php": "~7.2",
-        "ext-curl": "*",
-        "ext-pdo": "*",
-        "ext-json": "*",
-        "league/csv": "*"
+        "ext-pdo": "*"
     },
     "require-dev": {
 
@@ -27,7 +24,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Madj2k\\TradingAnalyser\\": "src"
+            "Madj2k\\SpencerBrown\\": "src"
         }
     }
 }

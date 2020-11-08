@@ -1,0 +1,2 @@
+# Insert the VMs IP here and copy it into your hosts /etc/hosts
+172.28.128.3	twitter.local
