@@ -61,51 +61,91 @@ abstract class RepositoryAbstract
         );
 
         // init and update tables
-        $structurePath = __DIR__ . '/../Configuration/Sql/Structure/';
-        $dataPath = __DIR__ . '/../Configuration/Sql/Data/';
-        $updatePath = __DIR__ . '/../Configuration/Sql/Updates/';
+        $this->initStructure();
+    }
 
-        // build structure
-        if(
-            (! file_exists($structurePath . $this->table . '.lock'))
-            && (file_exists($structurePath . $this->table . '.sql'))
-        ){
-            $databaseQuery = file_get_contents($structurePath . $this->table . '.sql');
-            if ($this->pdo->exec($databaseQuery) !== false) {
-                touch($structurePath . $this->table . '.lock');
+    /**
+     * init database structure
+     */
+    protected function initStructure ()
+    {
+        $reflector = new \ReflectionClass(get_class($this));
+        $directories = [
+            __DIR__,
+            dirname($reflector->getFileName())
+        ];
+
+        foreach ($directories as $directory) {
+
+            // set paths
+            $tmpPath = $directory . '/../../database/';
+            if (isset($this->settings['dirs']['temp'])) {
+                $tmpPath = $this->settings['dirs']['temp'] . '/';
             }
-        }
 
-        // do updates
-        $updateFiles = glob($updatePath . $this->table . '*.sql', GLOB_BRACE);
-        foreach ($updateFiles as $file) {
-
-            if (! is_file($file)) {
-                continue;
+            if (! is_dir($tmpPath)) {
+                throw new RepositoryException(sprintf('Temporary folder %s does not exist.', $tmpPath));
             }
 
-            $fileName = pathinfo($file,PATHINFO_FILENAME);
-            if (! file_exists($updatePath . $fileName . '.lock')) {
-                $databaseQuery = file_get_contents($file);
+            $structurePath = $directory . '/../../database/Structure/';
+            $dataPath = $directory . '/../../database/Data/';
+            $updatePath = $directory . '/../../database/Updates/';
+
+            // build structure
+            $blockUpdates = [];
+            if (
+                is_dir($structurePath)
+                && (! file_exists($tmpPath . 'db_structure_' .  $this->table . '.lock'))
+                && (file_exists($structurePath . $this->table . '.sql'))
+            ) {
+                $databaseQuery = file_get_contents($structurePath . $this->table . '.sql');
                 if ($this->pdo->exec($databaseQuery) !== false) {
-                    touch($updatePath . $fileName . '.lock');
+                    touch($tmpPath . 'db_structure_' . $this->table . '.lock');
+                    $blockUpdates[$this->table] = 1; // do not update after init!
+                } else {
+                    throw new RepositoryException(sprintf('Error while importing structure for table %s.', $this->table));
+                }
+            }
+
+            // do updates
+            if (is_dir($updatePath)) {
+                $updateFiles = glob($updatePath . $this->table . '*.sql', GLOB_BRACE);
+                foreach ($updateFiles as $file) {
+    
+                    if (! is_file($file)) {
+                        continue;
+                    }
+
+                    if (! file_exists($tmpPath . 'db_update_' . $fileName . '.lock')) {
+
+                        if ((isset($blockUpdates[$this->table]))) {
+                            touch($tmpPath . 'db_update_' . $fileName . '.lock');
+                        } else {
+                            $databaseQuery = file_get_contents($file);
+                            if ($this->pdo->exec($databaseQuery) !== false) {
+                                touch($tmpPath . 'db_update_' . $fileName . '.lock');
+                            } else {
+                                throw new RepositoryException(sprintf('Error while updating structure for table %s.', $this->table));
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // insert data
+            if(
+                (is_dir($dataPath))
+                && (! file_exists($tmpPath . 'db_data_' . $this->table . '.lock'))
+                && (file_exists($dataPath .  $this->table . '.sql'))
+            ){
+                $databaseQuery = file_get_contents($dataPath .  $this->table . '.sql');
+                if ($this->pdo->exec($databaseQuery) !== false) {
+                    touch($tmpPath . 'db_data_' . $this->table . '.lock');
+                } else {
+                    throw new RepositoryException(sprintf('Error while importing data for table %s.', $this->table));
                 }
             }
         }
-
-        // insert data
-        if(
-            (! file_exists($dataPath . $this->table . '.lock'))
-            && (file_exists($dataPath .  $this->table . '.sql'))
-        ){
-            $databaseQuery = file_get_contents($dataPath .  $this->table . '.sql');
-            if ($this->pdo->exec($databaseQuery) !== false) {
-                touch($dataPath . $this->table . '.lock');
-            }
-        }
-
-
-
     }
 
 
