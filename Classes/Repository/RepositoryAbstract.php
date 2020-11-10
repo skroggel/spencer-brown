@@ -61,51 +61,79 @@ abstract class RepositoryAbstract
         );
 
         // init and update tables
-        $structurePath = __DIR__ . '/../Configuration/Sql/Structure/';
-        $dataPath = __DIR__ . '/../Configuration/Sql/Data/';
-        $updatePath = __DIR__ . '/../Configuration/Sql/Updates/';
+        $this->initStructure();
+    }
 
-        // build structure
-        if(
-            (! file_exists($structurePath . $this->table . '.lock'))
-            && (file_exists($structurePath . $this->table . '.sql'))
-        ){
-            $databaseQuery = file_get_contents($structurePath . $this->table . '.sql');
-            if ($this->pdo->exec($databaseQuery) !== false) {
-                touch($structurePath . $this->table . '.lock');
-            }
-        }
+    /**
+     * init database structure
+     */
+    protected function initStructure ()
+    {
+        $reflector = new \ReflectionClass(get_class($this));
+        $directories = [
+            __DIR__,
+            dirname($reflector->getFileName())
+        ];
 
-        // do updates
-        $updateFiles = glob($updatePath . $this->table . '*.sql', GLOB_BRACE);
-        foreach ($updateFiles as $file) {
-
-            if (! is_file($file)) {
-                continue;
-            }
-
-            $fileName = pathinfo($file,PATHINFO_FILENAME);
-            if (! file_exists($updatePath . $fileName . '.lock')) {
-                $databaseQuery = file_get_contents($file);
+        foreach ($directories as $directory) {
+            
+            // init and update tables
+            $structurePath = $directory . '/../../Database/Structure/';
+            $dataPath = $directory . '/../../Database/Data/';
+            $updatePath = $directory . '/../../Database/Updates/';
+   
+            // build structure
+            $blockUpdates = [];
+            if (
+                is_dir($structurePath)
+                && (! file_exists($structurePath . $this->table . '.lock'))
+                && (file_exists($structurePath . $this->table . '.sql'))
+            ){
+                $databaseQuery = file_get_contents($structurePath . $this->table . '.sql');
                 if ($this->pdo->exec($databaseQuery) !== false) {
-                    touch($updatePath . $fileName . '.lock');
+                    touch($structurePath . $this->table . '.lock');
+                    $blockUpdates[$this->table] = 1; // do not update after init!
+                }
+            }
+
+            // do updates
+            if (is_dir($updatePath)) {
+                $updateFiles = glob($updatePath . $this->table . '*.sql', GLOB_BRACE);
+                foreach ($updateFiles as $file) {
+    
+                    if (! is_file($file)) {
+                        continue;
+                    }
+    
+                    $fileName = pathinfo($file,PATHINFO_FILENAME);
+                    if (
+                        (! file_exists($updatePath . $fileName . '.lock'))
+                        && ! (isset($blockUpdates[$this->table]))
+                    ){
+                        $databaseQuery = file_get_contents($file);
+                        if ($this->pdo->exec($databaseQuery) !== false) {
+                            touch($updatePath . $fileName . '.lock');
+                        }
+                    } else if (isset($blockUpdates[$this->table])) {
+                        touch($updatePath . $fileName . '.lock');
+                    }
+                }
+            }
+            
+            // insert data
+            if(
+                (is_dir($dataPath))
+                && (! file_exists($dataPath . $this->table . '.lock'))
+                && (file_exists($dataPath .  $this->table . '.sql'))
+            ){
+                $databaseQuery = file_get_contents($dataPath .  $this->table . '.sql');
+                if ($this->pdo->exec($databaseQuery) !== false) {
+                    touch($dataPath . $this->table . '.lock');
                 }
             }
         }
-
-        // insert data
-        if(
-            (! file_exists($dataPath . $this->table . '.lock'))
-            && (file_exists($dataPath .  $this->table . '.sql'))
-        ){
-            $databaseQuery = file_get_contents($dataPath .  $this->table . '.sql');
-            if ($this->pdo->exec($databaseQuery) !== false) {
-                touch($dataPath . $this->table . '.lock');
-            }
-        }
-
-
-
+        
+        exit();
     }
 
 
