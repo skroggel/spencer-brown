@@ -104,18 +104,17 @@ abstract class RepositoryAbstract
                     if (! is_file($file)) {
                         continue;
                     }
-    
-                    $fileName = pathinfo($file,PATHINFO_FILENAME);
-                    if (
-                        (! file_exists($updatePath . $fileName . '.lock'))
-                        && ! (isset($blockUpdates[$this->table]))
-                    ){
-                        $databaseQuery = file_get_contents($file);
-                        if ($this->pdo->exec($databaseQuery) !== false) {
+
+                    if (! file_exists($updatePath . $fileName . '.lock')) {
+
+                        if ((isset($blockUpdates[$this->table]))) {
                             touch($updatePath . $fileName . '.lock');
+                        } else {
+                            $databaseQuery = file_get_contents($file);
+                            if ($this->pdo->exec($databaseQuery) !== false) {
+                                touch($updatePath . $fileName . '.lock');
+                            }
                         }
-                    } else if (isset($blockUpdates[$this->table])) {
-                        touch($updatePath . $fileName . '.lock');
                     }
                 }
             }
@@ -132,8 +131,6 @@ abstract class RepositoryAbstract
                 }
             }
         }
-        
-        exit();
     }
 
 
