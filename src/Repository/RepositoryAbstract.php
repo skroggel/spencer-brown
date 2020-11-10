@@ -76,12 +76,21 @@ abstract class RepositoryAbstract
         ];
 
         foreach ($directories as $directory) {
-            
-            // init and update tables
-            $structurePath = $directory . '/../../Database/Structure/';
-            $dataPath = $directory . '/../../Database/Data/';
-            $updatePath = $directory . '/../../Database/Updates/';
-   
+
+            // set paths
+            $tmpPath = $directory . '/../../database/';
+            if (isset($this->settings['dirs']['temp'])) {
+                $tmpPath = $this->settings['dirs']['temp'] . '/';
+            }
+
+            if (! is_dir($tmpPath)) {
+                throw new RepositoryException(sprintf('Temporary folder %s does not exist.', $tmpPath));
+            }
+
+            $structurePath = $directory . '/../../database/Structure/';
+            $dataPath = $directory . '/../../database/Data/';
+            $updatePath = $directory . '/../../database/Updates/';
+
             // build structure
             $blockUpdates = [];
             if (
