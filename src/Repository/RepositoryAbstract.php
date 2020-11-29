@@ -84,7 +84,7 @@ abstract class RepositoryAbstract
             }
 
             if (! is_dir($tmpPath)) {
-                throw new RepositoryException(sprintf('Temporary folder %s does not exist.', $tmpPath));
+                throw new RepositoryException(sprintf('Temporary folder "%s" does not exist.', $tmpPath));
             }
 
             $structurePath = $directory . '/../../database/Structure/';
@@ -103,7 +103,7 @@ abstract class RepositoryAbstract
                     touch($tmpPath . 'db_structure_' . $this->table . '.lock');
                     $blockUpdates[$this->table] = 1; // do not update after init!
                 } else {
-                    throw new RepositoryException(sprintf('Error while importing structure for table %s.', $this->table));
+                    throw new RepositoryException(sprintf('Error while importing structure for table "%s".', $this->table));
                 }
             }
 
@@ -125,7 +125,7 @@ abstract class RepositoryAbstract
                             if ($this->pdo->exec($databaseQuery) !== false) {
                                 touch($tmpPath . 'db_update_' . $fileName . '.lock');
                             } else {
-                                throw new RepositoryException(sprintf('Error while updating structure for table %s.', $this->table));
+                                throw new RepositoryException(sprintf('Error while updating structure for table "%s".', $this->table));
                             }
                         }
                     }
@@ -142,7 +142,7 @@ abstract class RepositoryAbstract
                 if ($this->pdo->exec($databaseQuery) !== false) {
                     touch($tmpPath . 'db_data_' . $this->table . '.lock');
                 } else {
-                    throw new RepositoryException(sprintf('Error while importing data for table %s.', $this->table));
+                    throw new RepositoryException(sprintf('Error while importing data for table "%s".', $this->table));
                 }
             }
         }
@@ -233,7 +233,7 @@ abstract class RepositoryAbstract
      * @return array|null
      * @throws \Madj2k\SpencerBrown\Repository\RepositoryException
      */
-    public function _countAll (string $sql, array $arguments = [], $checkDeleted = true)
+    public function _countAll (string $sql, array $arguments = [], bool $checkDeleted = true)
     {
 
         if ($checkDeleted) {
@@ -262,16 +262,15 @@ abstract class RepositoryAbstract
      * @param string $sql
      * @param array $arguments
      * * @param bool $checkDeleted
-     * @return array|null
+     * @return array
      * @throws \Madj2k\SpencerBrown\Repository\RepositoryException
      */
-    public function _findAll (string $sql, array $arguments = [], $checkDeleted = true)
+    public function _findAll (string $sql, array $arguments = [], bool $checkDeleted = true) : array
     {
         if ($checkDeleted) {
             $sql = str_replace('where', 'where ' . $this->table . '.deleted = ? and', strtolower($sql));
             array_unshift($arguments, 0);
         }
-
         $sth = $this->pdo->prepare($sql);
         if ($sth->execute($arguments)) {
             if ($resultDb = $sth->fetchAll(\PDO::FETCH_ASSOC)) {
@@ -282,7 +281,7 @@ abstract class RepositoryAbstract
                 return $result;
             };
 
-            return null;
+            return [];
 
         } else {
             throw new RepositoryException($sth->errorInfo()[2]);
@@ -311,9 +310,7 @@ abstract class RepositoryAbstract
         $sth = $this->pdo->prepare($sql);
         if ($sth->execute($arguments)) {
             if ($resultDb = $sth->fetch(\PDO::FETCH_ASSOC)) {
-
                 return new $this->model($resultDb);
-
             };
 
             return null;
